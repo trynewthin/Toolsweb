@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+assets/manifest.json
+
+# env
+.env
+.env.*
+
+# system
+.DS_Store
+Thumbs.db
+.vercel/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

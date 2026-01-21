@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <!-- TOOL_META { "title": "cURL 转 FFmpeg", "desc": "提取 URL 与关键头，生成可直接使用的 FFmpeg 指令。", "tags": ["效率", "开发"], "path": "tools/curl2ffmpeg.html" } -->
+    <meta charset="UTF-8">
+    <title>cURL 转 FFmpeg 助手</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 40px; color: #1e293b; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        textarea { width: 100%; height: 180px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Cascadia Code', 'Courier New', monospace; font-size: 13px; box-sizing: border-box; resize: vertical; }
+        .controls { margin: 20px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        input[type="text"] { padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; width: 200px; }
+        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .output-area { background: #1e293b; color: #f1f5f9; padding: 20px; border-radius: 6px; position: relative; margin-top: 20px; }
+        pre { white-space: pre-wrap; word-break: break-all; margin: 0; font-size: 14px; line-height: 1.5; }
+        .copy-btn { position: absolute; top: 10px; right: 10px; background: #475569; font-size: 12px; padding: 5px 10px; }
+        .hint { font-size: 12px; color: #64748b; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🚀 cURL to FFmpeg Converter</h2>
+    
+    <label>1. 请粘贴从浏览器复制的 cURL 命令：</label>
+    <textarea id="curlInput" placeholder="curl 'https://...' -H 'User-Agent: ...' ..."></textarea>
+    
+    <div class="controls">
+        <label>本地代理地址：</label>
+        <input type="text" id="proxyInput" value="http://127.0.0.1:7890">
+        <button onclick="convert()">立即转换</button>
+    </div>
+
+    <label>2. FFmpeg 输出指令：</label>
+    <div class="output-area">
+        <button class="copy-btn" onclick="copyResult()">复制指令</button>
+        <pre id="ffmpegOutput">等待输入...</pre>
+    </div>
+    <p class="hint">提示：此工具会自动提取 URL、Referer、Cookie 和 User-Agent，并移除多余的 Header 以保证指令简洁。</p>
+</div>
+
+<script>
+    function convert() {
+        const input = document.getElementById('curlInput').value;
+        const proxy = document.getElementById('proxyInput').value;
+        const output = document.getElementById('ffmpegOutput');
+
+        if (!input.trim()) {
+            output.innerText = "请输入内容";
+            return;
+        }
+
+        // 提取 URL
+        const urlMatch = input.match(/['"](https?:\/\/[^'"]+)['"]/);
+        const url = urlMatch ? urlMatch[1] : "未找到URL";
+
+        // 提取核心 Headers
+        const getHeader = (name) => {
+            const regex = new RegExp(`-H ['"]${name}:\\s*([^'"]+)['"]`, 'i');
+            const match = input.match(regex);
+            return match ? match[1] : null;
+        };
+
+        const ua = getHeader('User-Agent') || "Mozilla/5.0";
+        const referer = getHeader('Referer');
+        const cookie = getHeader('Cookie');
+
+        // 组装 FFmpeg
+        let ffmpeg = `ffmpeg -user_agent "${ua}" `;
+        if (referer) ffmpeg += `-headers "Referer: ${referer}" `;
+        if (cookie) ffmpeg += `-headers "Cookie: ${cookie}" `;
+        if (proxy) ffmpeg += `-http_proxy "${proxy}" `;
+        
+        // 核心下载逻辑
+        ffmpeg += `-i "${url}" -c copy -bsf:a aac_adtstoasc "output_${Date.now()}.mp4"`;
+
+        output.innerText = ffmpeg;
+    }
+
+    function copyResult() {
+        const text = document.getElementById('ffmpegOutput').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert("已复制到剪贴板");
+        });
+    }
+</script>
+
+</body>
+</html>

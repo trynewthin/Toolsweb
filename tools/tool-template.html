@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <!-- TOOL_META { "title": "示例工具", "desc": "一句话描述工具用途。", "tags": ["效率"], "path": "tools/tool-template.html" } -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>工具模板 · ToolsHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/base.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand__dot"></span>
+          <div>
+            <p class="brand__name">ToolsHub</p>
+            <p class="brand__tag">工具模板</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="../index.html">返回首页</a>
+          <a href="#usage">使用说明</a>
+          <a href="#layout">布局块</a>
+        </nav>
+        <button class="ghost-btn">复制模板</button>
+      </header>
+
+      <main class="layout">
+        <section class="hero" id="layout">
+          <div>
+            <p class="eyebrow">工具页面结构</p>
+            <h1>复制此文件，替换标题与内容即可。</h1>
+            <p class="hero__desc">把工具逻辑放在下方内容区或单独 JS 文件中。</p>
+          </div>
+          <div class="hero__panel">
+            <div class="panel__item">
+              <p class="panel__label">工具名称</p>
+              <p class="panel__value">你的工具</p>
+            </div>
+            <div class="panel__item">
+              <p class="panel__label">所属分类</p>
+              <p class="panel__value">效率 / 文档</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="tool-card" id="usage">
+          <div class="tool-card__head">
+            <span class="badge">步骤</span>
+          </div>
+          <h3>使用指南</h3>
+          <p>
+            1. 修改页面标题与描述。<br />
+            2. 在下方工具区域放置输入、按钮、结果。<br />
+            3. 如需脚本，可新建 tools/xxx.js 并在此引用。
+          </p>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-card__head">
+            <span class="badge">工具区域</span>
+          </div>
+          <h3>工具交互区</h3>
+          <p>这里放置表单、上传区、输出结果等核心交互。</p>
+          <div style="margin-top: 16px; display: grid; gap: 12px;">
+            <input
+              type="text"
+              placeholder="示例：输入你的内容"
+              style="padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(30, 26, 22, 0.1);"
+            />
+            <button class="primary-btn" style="width: fit-content;">执行工具</button>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>模板可直接复制使用 · ToolsHub</p>
+      </footer>
+    </div>
+  </body>
+</html>
