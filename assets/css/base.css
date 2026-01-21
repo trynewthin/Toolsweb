@@ -196,6 +196,22 @@ body {
   background: #fff;
 }
 
+.board {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(30, 26, 22, 0.08);
+  display: grid;
+  gap: 16px;
+}
+
+.board__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -242,6 +258,13 @@ body {
 
 .tool-card__head {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tool-card__tags {
+  display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -263,6 +286,26 @@ body {
   text-decoration: none;
   color: var(--accent-dark);
   font-weight: 600;
+}
+
+.fav-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: grid;
+  place-items: center;
+}
+
+.fav-btn.active {
+  background: #ffe9dc;
+  border-color: transparent;
+  color: var(--accent-dark);
+  box-shadow: 0 6px 16px rgba(255, 107, 74, 0.3);
 }
 
 .footer {

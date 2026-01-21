@@ -24,9 +24,8 @@
         </div>
         <nav class="nav">
           <a href="#all">全部工具</a>
-          <a href="#popular">常用</a>
-          <a href="#new">新上线</a>
-          <a href="tools/tool-template.html">模板</a>
+          <a href="#favorites">收藏</a>
+          <a href="#recent">最近</a>
         </nav>
         <button class="ghost-btn">提交新工具</button>
       </header>
@@ -75,6 +74,22 @@
               <button class="chip" data-filter="开发">开发</button>
             </div>
           </div>
+        </section>
+
+        <section class="board" id="favorites">
+          <div class="board__header">
+            <h2>收藏</h2>
+            <p class="muted">标记喜爱的工具，快速访问。</p>
+          </div>
+          <div class="grid" id="favoritesGrid"></div>
+        </section>
+
+        <section class="board" id="recent">
+          <div class="board__header">
+            <h2>最近使用</h2>
+            <p class="muted">记录你最近打开的工具。</p>
+          </div>
+          <div class="grid" id="recentGrid"></div>
         </section>
 
         <section class="grid" id="toolGrid"></section>

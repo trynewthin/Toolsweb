@@ -1,12 +1,16 @@
 const searchInput = document.querySelector("#searchInput");
 const chipContainer = document.querySelector(".chips");
 const grid = document.querySelector("#toolGrid");
+const favoritesGrid = document.querySelector("#favoritesGrid");
+const recentGrid = document.querySelector("#recentGrid");
 const totalEl = document.querySelector("#totalTools");
 const tagsEl = document.querySelector("#activeTags");
 const updatedEl = document.querySelector("#lastUpdated");
 
 let cards = [];
 let tools = [];
+let favorites = new Set(JSON.parse(localStorage.getItem("toolFavorites") || "[]"));
+let recent = JSON.parse(localStorage.getItem("toolRecent") || "[]");
 
 const formatDate = (ts) => {
   if (!ts) return "--";
@@ -37,7 +41,8 @@ const renderCards = (list) => {
       (tool) => `
       <article class="tool-card" data-tags="${(tool.tags || []).join(",")}">
         <div class="tool-card__head">
-          ${(tool.tags || []).map((t) => `<span class="badge">${t}</span>`).join("")}
+          <div class="tool-card__tags">${(tool.tags || []).map((t) => `<span class="badge">${t}</span>`).join("")}</div>
+          <button class="fav-btn ${favorites.has(tool.path) ? "active" : ""}" data-path="${tool.path}" title="收藏">★</button>
         </div>
         <h3>${tool.title || "未命名工具"}</h3>
         <p>${tool.desc || ""}</p>
@@ -47,6 +52,29 @@ const renderCards = (list) => {
     )
     .join("");
   cards = Array.from(document.querySelectorAll(".tool-card"));
+};
+
+const renderSubGrid = (target, list) => {
+  if (!target) return;
+  if (!list.length) {
+    target.innerHTML = '<p class="muted">暂无数据</p>';
+    return;
+  }
+  target.innerHTML = list
+    .map(
+      (tool) => `
+      <article class="tool-card" data-tags="${(tool.tags || []).join(",")}">
+        <div class="tool-card__head">
+          <div class="tool-card__tags">${(tool.tags || []).map((t) => `<span class="badge">${t}</span>`).join("")}</div>
+          <button class="fav-btn ${favorites.has(tool.path) ? "active" : ""}" data-path="${tool.path}" title="收藏">★</button>
+        </div>
+        <h3>${tool.title || "未命名工具"}</h3>
+        <p>${tool.desc || ""}</p>
+        <a href="${tool.path}" class="card-link">打开工具 →</a>
+      </article>
+    `,
+    )
+    .join("");
 };
 
 const applyFilter = () => {
@@ -76,6 +104,57 @@ const bindChipEvents = () => {
   });
 };
 
+const bindFavoriteEvents = (scope = document) => {
+  scope.addEventListener("click", (e) => {
+    const btn = e.target.closest(".fav-btn");
+    if (!btn) return;
+    const path = btn.dataset.path;
+    if (!path) return;
+    if (favorites.has(path)) {
+      favorites.delete(path);
+    } else {
+      favorites.add(path);
+    }
+    localStorage.setItem("toolFavorites", JSON.stringify(Array.from(favorites)));
+    renderAllSections();
+  });
+};
+
+const recordRecent = (path) => {
+  if (!path) return;
+  const rest = recent.filter((p) => p !== path);
+  recent = [path, ...rest].slice(0, 8);
+  localStorage.setItem("toolRecent", JSON.stringify(recent));
+};
+
+const hydrateLinks = () => {
+  grid.addEventListener("click", (e) => {
+    const link = e.target.closest("a.card-link");
+    if (!link) return;
+    recordRecent(link.getAttribute("href"));
+  });
+};
+
+const mapByPath = (list) => {
+  const map = new Map();
+  list.forEach((t) => map.set(t.path, t));
+  return map;
+};
+
+const renderAllSections = () => {
+  renderCards(tools);
+  const map = mapByPath(tools);
+  const favList = Array.from(favorites)
+    .map((p) => map.get(p))
+    .filter(Boolean);
+  const recentList = recent
+    .map((p) => map.get(p))
+    .filter(Boolean);
+  renderSubGrid(favoritesGrid, favList);
+  renderSubGrid(recentGrid, recentList);
+  applyFilter();
+};
+
 const init = async () => {
   try {
     const res = await fetch("assets/manifest.json", { cache: "no-cache" });
@@ -84,10 +163,11 @@ const init = async () => {
     tools = manifest.tools || [];
     tools.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
     renderChips(tools);
-    renderCards(tools);
+    renderAllSections();
     updateStats(tools);
-    applyFilter();
     bindChipEvents();
+    bindFavoriteEvents(document);
+    hydrateLinks();
   } catch (err) {
     grid.innerHTML = '<p class="muted">未找到 manifest，请运行 npm run build 生成工具清单。</p>';
     console.error(err);
