@@ -3,43 +3,142 @@
 <head>
     <!-- TOOL_META { "title": "cURL 转 FFmpeg", "desc": "提取 URL 与关键头，生成可直接使用的 FFmpeg 指令。", "tags": ["效率", "开发"], "path": "tools/curl2ffmpeg.html" } -->
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>cURL 转 FFmpeg 助手</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/base.css" />
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 40px; color: #1e293b; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
-        textarea { width: 100%; height: 180px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Cascadia Code', 'Courier New', monospace; font-size: 13px; box-sizing: border-box; resize: vertical; }
-        .controls { margin: 20px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        input[type="text"] { padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; width: 200px; }
-        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
-        button:hover { opacity: 0.9; }
-        .output-area { background: #1e293b; color: #f1f5f9; padding: 20px; border-radius: 6px; position: relative; margin-top: 20px; }
-        pre { white-space: pre-wrap; word-break: break-all; margin: 0; font-size: 14px; line-height: 1.5; }
-        .copy-btn { position: absolute; top: 10px; right: 10px; background: #475569; font-size: 12px; padding: 5px 10px; }
-        .hint { font-size: 12px; color: #64748b; margin-top: 5px; }
+        .tool-form {
+            display: grid;
+            gap: 16px;
+        }
+        .tool-form label {
+            font-weight: 600;
+        }
+        .tool-form textarea,
+        .tool-form input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(30, 26, 22, 0.1);
+            font-family: "Space Grotesk", "Epilogue", sans-serif;
+        }
+        .tool-form textarea {
+            min-height: 180px;
+            resize: vertical;
+        }
+        .tool-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .output-area {
+            background: #1e1a16;
+            color: #f1efe9;
+            padding: 18px;
+            border-radius: 16px;
+            position: relative;
+        }
+        .output-area pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: none;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .hint {
+            color: var(--muted);
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🚀 cURL to FFmpeg Converter</h2>
-    
-    <label>1. 请粘贴从浏览器复制的 cURL 命令：</label>
-    <textarea id="curlInput" placeholder="curl 'https://...' -H 'User-Agent: ...' ..."></textarea>
-    
-    <div class="controls">
-        <label>本地代理地址：</label>
-        <input type="text" id="proxyInput" value="http://127.0.0.1:7890">
-        <button onclick="convert()">立即转换</button>
-    </div>
+<div class="page">
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand__dot"></span>
+            <div>
+                <p class="brand__name">ToolsHub</p>
+                <p class="brand__tag">cURL 转 FFmpeg</p>
+            </div>
+        </div>
+        <nav class="nav">
+            <a href="../index.html">返回首页</a>
+            <a href="#converter">工具区</a>
+        </nav>
+        <button class="ghost-btn" onclick="copyResult()">复制指令</button>
+    </header>
 
-    <label>2. FFmpeg 输出指令：</label>
-    <div class="output-area">
-        <button class="copy-btn" onclick="copyResult()">复制指令</button>
-        <pre id="ffmpegOutput">等待输入...</pre>
-    </div>
-    <p class="hint">提示：此工具会自动提取 URL、Referer、Cookie 和 User-Agent，并移除多余的 Header 以保证指令简洁。</p>
+    <main class="layout">
+        <section class="hero">
+            <div>
+                <p class="eyebrow">效率 / 开发</p>
+                <h1>cURL 转 FFmpeg 指令生成器</h1>
+                <p class="hero__desc">自动提取 URL、Referer、Cookie 与 User-Agent，拼装为可直接使用的下载命令。</p>
+            </div>
+            <div class="hero__panel">
+                <div class="panel__item">
+                    <p class="panel__label">输入来源</p>
+                    <p class="panel__value">浏览器 cURL</p>
+                </div>
+                <div class="panel__item">
+                    <p class="panel__label">输出</p>
+                    <p class="panel__value">FFmpeg</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="tool-card" id="converter">
+            <div class="tool-card__head">
+                <span class="badge">步骤 1</span>
+            </div>
+            <h3>粘贴 cURL 命令</h3>
+            <div class="tool-form">
+                <label for="curlInput">从浏览器复制的 cURL 命令</label>
+                <textarea id="curlInput" placeholder="curl 'https://...' -H 'User-Agent: ...' ..."></textarea>
+                <div class="tool-actions">
+                    <label for="proxyInput">本地代理地址</label>
+                    <input type="text" id="proxyInput" value="http://127.0.0.1:7890">
+                    <button class="primary-btn" onclick="convert()">立即转换</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="tool-card">
+            <div class="tool-card__head">
+                <span class="badge">步骤 2</span>
+            </div>
+            <h3>FFmpeg 输出指令</h3>
+            <div class="output-area">
+                <button class="copy-btn" onclick="copyResult()">复制指令</button>
+                <pre id="ffmpegOutput">等待输入...</pre>
+            </div>
+            <p class="hint">提示：此工具会自动提取 URL、Referer、Cookie 和 User-Agent，并移除多余的 Header 以保证指令简洁。</p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>ToolsHub · 快速生成可用指令</p>
+    </footer>
 </div>
 
 <script>
@@ -53,9 +152,9 @@
             return;
         }
 
-        // 提取 URL
-        const urlMatch = input.match(/['"](https?:\/\/[^'"]+)['"]/);
-        const url = urlMatch ? urlMatch[1] : "未找到URL";
+        // 提取 URL（支持有无引号）
+        const urlMatch = input.match(/(https?:\/\/\S+)/);
+        const url = urlMatch ? urlMatch[1].replace(/["']$/, "") : "未找到URL";
 
         // 提取核心 Headers
         const getHeader = (name) => {
