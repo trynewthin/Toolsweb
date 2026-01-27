@@ -1,13 +1,22 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import Layout from "../components/Layout";
+import { useTools } from "../hooks/useTools";
+import { toast } from "sonner";
 
 export default function Curl2Ffmpeg() {
+  const { recordVisit } = useTools();
+
+  useEffect(() => {
+    recordVisit("curl2ffmpeg");
+  }, [recordVisit]);
+
   const [input, setInput] = useState("");
   const [proxy, setProxy] = useState("http://127.0.0.1:7890");
   const [output, setOutput] = useState("等待输入...");
 
   const handleConvert = () => {
     if (!input.trim()) {
+      toast.error("请输入 cURL 内容");
       setOutput("请输入内容");
       return;
     }
@@ -32,20 +41,66 @@ export default function Curl2Ffmpeg() {
 
     ffmpeg += `-i "${url}" -c copy -bsf:a aac_adtstoasc "output_${Date.now()}.mp4"`;
     setOutput(ffmpeg);
+    toast.success("指令已更新");
   };
 
   const handleCopy = () => {
+    if (output === "等待输入..." || output === "请输入内容") {
+      toast.warning("尚无有效内容可复制");
+      return;
+    }
     navigator.clipboard.writeText(output).then(() => {
-      alert("已复制到剪贴板");
+      toast.success("已复制到剪贴板");
     });
   };
 
+  const handleClear = () => {
+    setInput("");
+    setOutput("等待输入...");
+    toast.info("已清空输入");
+  };
+
   return (
-    <div className="page">
+    <Layout
+      title="cURL 转 FFmpeg"
+      tagline="cURL 转 FFmpeg"
+      category="效率 / 开发"
+      heroTitle="cURL 转 FFmpeg 指令生成器"
+      heroDesc="自动提取 URL、Referer、Cookie 与 User-Agent，拼装为可直接使用的下载命令。"
+      nav={[{ label: "工具面板", href: "#converter" }]}
+      stats={[
+        { label: "输入来源", value: "浏览器 cURL" },
+        { label: "输出格式", value: "FFmpeg" },
+      ]}
+      actions={
+        <div className="flex gap-3">
+          <button className="secondary-btn" onClick={handleClear}>清空</button>
+          <button className="primary-btn" onClick={handleCopy}>复制指令</button>
+        </div>
+      }
+    >
       <style>{`
-        .tool-form {
+        .converter-grid {
           display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+        }
+        @media (max-width: 1024px) {
+          .converter-grid {
+            grid-template-columns: 1fr;
+            align-items: start;
+          }
+        }
+        .tool-card {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
+        .tool-form {
+          display: flex;
+          flex-direction: column;
           gap: 16px;
+          flex: 1;
         }
         .tool-form label {
           font-weight: 600;
@@ -56,10 +111,11 @@ export default function Curl2Ffmpeg() {
           padding: 12px 14px;
           border-radius: 12px;
           border: 1px solid rgba(30, 26, 22, 0.1);
-          font-family: "Space Grotesk", "Epilogue", sans-serif;
+          font-family: inherit;
         }
         .tool-form textarea {
-          min-height: 180px;
+          flex: 1;
+          min-height: 320px;
           resize: vertical;
         }
         .tool-actions {
@@ -67,13 +123,23 @@ export default function Curl2Ffmpeg() {
           flex-wrap: wrap;
           gap: 12px;
           align-items: center;
+          margin-top: auto;
+        }
+        .output-container {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          flex: 1;
         }
         .output-area {
           background: #1e1a16;
           color: #f1efe9;
-          padding: 18px;
+          padding: 24px;
           border-radius: 16px;
           position: relative;
+          flex: 1;
+          min-height: 280px;
+          box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
         }
         .output-area pre {
           white-space: pre-wrap;
@@ -81,107 +147,95 @@ export default function Curl2Ffmpeg() {
           margin: 0;
           font-size: 14px;
           line-height: 1.6;
+          font-family: "JetBrains Mono", "Space Mono", monospace;
         }
-        .copy-btn {
+        .copy-overlay {
           position: absolute;
           top: 12px;
           right: 12px;
-          padding: 6px 12px;
-          border-radius: 999px;
-          border: none;
-          background: rgba(255, 255, 255, 0.12);
-          color: #fff;
-          cursor: pointer;
-          font-size: 12px;
         }
         .hint {
           color: var(--muted);
-          font-size: 12px;
+          font-size: 13px;
+          background: var(--bg-deep);
+          padding: 12px;
+          border-radius: 10px;
+          border-left: 4px solid var(--accent);
+          margin-top: auto;
+        }
+        .section-header {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           margin-bottom: 8px;
         }
       `}</style>
 
-      <header className="topbar">
-        <div className="brand">
-          <span className="brand__dot"></span>
-          <div>
-            <p className="brand__name">ToolsHub</p>
-            <p className="brand__tag">cURL 转 FFmpeg</p>
-          </div>
-        </div>
-        <nav className="nav">
-          <Link to="/">返回首页</Link>
-          <a href="#converter">工具区</a>
-        </nav>
-        <button className="ghost-btn" onClick={handleCopy}>
-          复制指令
-        </button>
-      </header>
-
-      <main className="layout">
-        <section className="hero">
-          <div>
-            <p className="eyebrow">效率 / 开发</p>
-            <h1>cURL 转 FFmpeg 指令生成器</h1>
-            <p className="hero__desc">自动提取 URL、Referer、Cookie 与 User-Agent，拼装为可直接使用的下载命令。</p>
-          </div>
-          <div className="hero__panel">
-            <div className="panel__item">
-              <p className="panel__label">输入来源</p>
-              <p className="panel__value">浏览器 cURL</p>
-            </div>
-            <div className="panel__item">
-              <p className="panel__label">输出</p>
-              <p className="panel__value">FFmpeg</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="tool-card" id="converter">
-          <div className="tool-card__head">
+      <div className="converter-grid" id="converter">
+        {/* 左侧：输入 */}
+        <section className="tool-card">
+          <div className="section-header">
+            <h3>粘贴 cURL 命令</h3>
             <span className="badge">步骤 1</span>
           </div>
-          <h3>粘贴 cURL 命令</h3>
           <div className="tool-form">
-            <label htmlFor="curlInput">从浏览器复制的 cURL 命令</label>
             <textarea
               id="curlInput"
-              placeholder="curl 'https://...' -H 'User-Agent: ...' ..."
+              placeholder="在这里粘贴从 Chrome 代码检查器复制的 cURL (bash) 命令..."
               value={input}
               onChange={(event) => setInput(event.target.value)}
             ></textarea>
+
             <div className="tool-actions">
-              <label htmlFor="proxyInput">本地代理地址</label>
-              <input
-                type="text"
-                id="proxyInput"
-                value={proxy}
-                onChange={(event) => setProxy(event.target.value)}
-              />
-              <button className="primary-btn" onClick={handleConvert}>
-                立即转换
+              <div style={{ flex: 1 }}>
+                <label htmlFor="proxyInput" style={{ fontSize: '13px', display: 'block', marginBottom: '4px' }}>本地代理地址</label>
+                <input
+                  type="text"
+                  id="proxyInput"
+                  placeholder="如 http://127.0.0.1:7890"
+                  value={proxy}
+                  onChange={(event) => setProxy(event.target.value)}
+                />
+              </div>
+              <button
+                className="primary-btn"
+                onClick={handleConvert}
+                style={{ alignSelf: 'flex-end', height: '44px' }}
+              >
+                立即转换 ⚡
+              </button>
+              <button
+                className="secondary-btn"
+                onClick={handleClear}
+                style={{ alignSelf: 'flex-end', height: '44px' }}
+              >
+                清空
               </button>
             </div>
           </div>
         </section>
 
+        {/* 右侧：输出 */}
         <section className="tool-card">
-          <div className="tool-card__head">
+          <div className="section-header">
+            <h3>FFmpeg 输出指令</h3>
             <span className="badge">步骤 2</span>
           </div>
-          <h3>FFmpeg 输出指令</h3>
-          <div className="output-area">
-            <button className="copy-btn" onClick={handleCopy}>
-              复制指令
-            </button>
-            <pre>{output}</pre>
+          <div className="output-container">
+            <div className="output-area">
+              <div className="copy-overlay">
+                <button className="ghost-btn" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none' }} onClick={handleCopy}>
+                  点击复制
+                </button>
+              </div>
+              <pre>{output}</pre>
+            </div>
+            <div className="hint">
+              <strong>提示：</strong> 此转换器会自动识别并提取 URL 及关键请求头（UA/Referer/Cookie），并将其包装为 FFmpeg 兼容的参数。
+            </div>
           </div>
-          <p className="hint">提示：此工具会自动提取 URL、Referer、Cookie 和 User-Agent，并移除多余的 Header 以保证指令简洁。</p>
         </section>
-      </main>
-
-      <footer className="footer">
-        <p>ToolsHub · 快速生成可用指令</p>
-      </footer>
-    </div>
+      </div>
+    </Layout>
   );
 }

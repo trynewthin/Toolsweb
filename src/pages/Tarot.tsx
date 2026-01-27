@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import Layout from "../components/Layout";
+import { useTools } from "../hooks/useTools";
+import { toast } from "sonner";
 
 type Card = {
   name: string;
@@ -36,7 +38,7 @@ const DECK: Card[] = [
   { name: "XIII 死神", desc: "结束 / 转化 / 重生" },
   { name: "XIV 节制", desc: "调和 / 节奏 / 复原" },
   { name: "XV 恶魔", desc: "束缚 / 欲望 / 觉察" },
-  { name: "XVI 塔", desc: "冲击 / 崩塌 / 真相" },
+  { name: "XVI 塔", desc: "冲击 / 崩塌 / 真放" },
   { name: "XVII 星星", desc: "希望 / 复苏 / 指引" },
   { name: "XVIII 月亮", desc: "迷雾 / 情绪 / 潜意识" },
   { name: "XIX 太阳", desc: "清晰 / 成功 / 喜悦" },
@@ -92,6 +94,12 @@ type Snapshot = {
 };
 
 export default function Tarot() {
+  const { recordVisit } = useTools();
+
+  useEffect(() => {
+    recordVisit("tarot");
+  }, [recordVisit]);
+
   const [spreadKey, setSpreadKey] = useState("three");
   const [remaining, setRemaining] = useState<Card[]>(() => shuffle(DECK));
   const [placed, setPlaced] = useState<Placed[]>([]);
@@ -104,7 +112,7 @@ export default function Tarot() {
     return spread.slots.find((slot) => !used.has(slot.id)) || null;
   }, [placed, spread]);
 
-  const updateHistory = () => {
+  const updateHistory = useCallback(() => {
     setHistory((prev) => {
       const next = prev.slice();
       next.push({
@@ -114,12 +122,13 @@ export default function Tarot() {
       });
       return next.length > 50 ? next.slice(1) : next;
     });
-  };
+  }, [spreadKey, remaining, placed]);
 
   const reset = () => {
     setRemaining(shuffle(DECK));
     setPlaced([]);
     setHistory([]);
+    toast.info("已重置桌面，牌库已重新洗牌");
   };
 
   const undo = () => {
@@ -130,6 +139,7 @@ export default function Tarot() {
         setSpreadKey(last.spreadKey);
         setRemaining(last.remaining.slice());
         setPlaced(last.placed.map((item) => ({ ...item })));
+        toast.success("已撤销上一步操作");
       }
       return next;
     });
@@ -138,10 +148,14 @@ export default function Tarot() {
   const reshuffle = () => {
     updateHistory();
     setRemaining((prev) => shuffle(prev));
+    toast.success("洗牌完成");
   };
 
   const draw = (index: number) => {
-    if (!nextEmptySlot) return;
+    if (!nextEmptySlot) {
+      toast.warning("已抽满该排阵");
+      return;
+    }
     if (!remaining.length) return;
     updateHistory();
 
@@ -149,6 +163,7 @@ export default function Tarot() {
       const copy = prev.slice();
       const picked = copy.splice(index, 1)[0];
       setPlaced((prevPlaced) => [...prevPlaced, { slotId: nextEmptySlot.id, card: picked }]);
+      toast.success(`抽到了 ${picked.name}，落在「${nextEmptySlot.label}」`);
       return copy;
     });
   };
@@ -158,7 +173,26 @@ export default function Tarot() {
   const canUndo = history.length > 0;
 
   return (
-    <div className="page">
+    <Layout
+      title="塔罗抽卡"
+      tagline="塔罗抽卡"
+      category="娱乐 / 交互"
+      heroTitle="点击牌背翻面并加入牌阵。"
+      heroDesc="支持单张、三张与凯尔特十字。所有操作在本地完成。"
+      nav={[
+        { label: "桌面", href: "#table" },
+        { label: "牌库", href: "#deck" },
+      ]}
+      stats={[
+        { label: "当前排阵", value: spread.name },
+        { label: "已抽卡片", value: placed.length },
+      ]}
+      actions={
+        <button className="ghost-btn" onClick={reset}>
+          重置桌面
+        </button>
+      }
+    >
       <style>{`
         .toolbar {
           display: flex;
@@ -166,7 +200,6 @@ export default function Tarot() {
           gap: 12px;
           align-items: center;
         }
-
         .toolbar select {
           padding: 10px 12px;
           border-radius: 12px;
@@ -174,12 +207,10 @@ export default function Tarot() {
           background: #fff;
           font-family: inherit;
         }
-
         .toolbar .hint {
           font-size: 12px;
           color: var(--muted);
         }
-
         .table {
           position: relative;
           background: radial-gradient(circle at 30% 20%, #fff4ea 0%, transparent 45%),
@@ -188,10 +219,9 @@ export default function Tarot() {
           border: 1px solid var(--line);
           border-radius: 24px;
           padding: 18px;
-          min-height: 440px;
+          min-height: 520px;
           overflow: hidden;
         }
-
         .table::before {
           content: "";
           position: absolute;
@@ -200,7 +230,6 @@ export default function Tarot() {
           border: 1px dashed rgba(30, 26, 22, 0.15);
           pointer-events: none;
         }
-
         .slot {
           position: absolute;
           width: 110px;
@@ -211,28 +240,25 @@ export default function Tarot() {
           background: rgba(255, 255, 255, 0.65);
           display: grid;
           place-items: center;
+          transition: all 0.3s ease;
         }
-
         .slot__label {
           font-size: 12px;
           color: var(--muted);
           text-align: center;
           padding: 0 10px;
         }
-
         .card {
           width: 110px;
           height: 170px;
           border-radius: 16px;
           position: relative;
           transform-style: preserve-3d;
-          transition: transform 0.55s ease;
+          transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
         }
-
         .card.is-flipped {
           transform: rotateY(180deg);
         }
-
         .card__face {
           position: absolute;
           inset: 0;
@@ -240,15 +266,18 @@ export default function Tarot() {
           backface-visibility: hidden;
           border: 1px solid rgba(30, 26, 22, 0.14);
           overflow: hidden;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
-
         .card__back {
           background: linear-gradient(135deg, #1e1a16, #3c2f27);
           color: rgba(255, 255, 255, 0.9);
           display: grid;
           place-items: center;
+          cursor: pointer;
         }
-
+        .card__back:hover {
+           filter: contrast(1.1);
+        }
         .card__back::before {
           content: "";
           position: absolute;
@@ -256,224 +285,181 @@ export default function Tarot() {
           border-radius: 12px;
           border: 1px solid rgba(255, 255, 255, 0.18);
         }
-
         .card__back span {
           font-weight: 700;
           letter-spacing: 0.14em;
           font-size: 12px;
           z-index: 1;
         }
-
         .card__front {
           background: #fff;
           transform: rotateY(180deg);
           display: grid;
           grid-template-rows: auto 1fr;
         }
-
         .card__title {
           padding: 12px 12px 0;
           font-weight: 700;
           font-size: 12px;
           color: var(--text);
+          border-bottom: 1px solid var(--line);
+          margin-bottom: 8px;
+          padding-bottom: 8px;
         }
-
         .card__desc {
-          padding: 10px 12px 14px;
+          padding: 0 12px 14px;
           color: var(--muted);
-          font-size: 12px;
-          line-height: 1.4;
-          display: grid;
-          align-content: center;
+          font-size: 11px;
+          line-height: 1.5;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
         }
-
         .deck {
           display: flex;
           gap: 12px;
           overflow-x: auto;
-          padding: 10px 2px 2px;
+          padding: 10px 2px 20px;
           scroll-snap-type: x mandatory;
         }
-
         .deck::-webkit-scrollbar {
-          height: 10px;
+          height: 6px;
         }
-
         .deck::-webkit-scrollbar-thumb {
-          background: rgba(30, 26, 22, 0.15);
+          background: rgba(30, 26, 22, 0.1);
           border-radius: 999px;
         }
-
         .deck-card {
           scroll-snap-align: start;
           flex: 0 0 auto;
-          cursor: pointer;
+          transition: transform 0.2s ease;
         }
-
-        .deck-card:active {
-          transform: translateY(1px);
+        .deck-card:hover {
+          transform: translateY(-8px);
         }
-
         .empty {
           color: var(--muted);
           font-size: 13px;
+          padding: 20px;
+          background: var(--bg-deep);
+          border-radius: 12px;
+          width: 100%;
+          text-align: center;
         }
-
         @media (max-width: 640px) {
           .table {
             min-height: 520px;
           }
-          .slot,
-          .card {
+          .slot, .card {
             width: 96px;
             height: 150px;
           }
         }
       `}</style>
 
-      <header className="topbar">
-        <div className="brand">
-          <span className="brand__dot"></span>
-          <div>
-            <p className="brand__name">ToolsHub</p>
-            <p className="brand__tag">塔罗抽卡</p>
+      <section className="tool-card">
+        <div className="tool-card__head">
+          <div className="tool-card__tags">
+            <span className="badge">排阵选项</span>
           </div>
         </div>
-        <nav className="nav">
-          <Link to="/">返回首页</Link>
-          <a href="#table">桌面</a>
-          <a href="#deck">牌库</a>
-        </nav>
-        <button className="ghost-btn" onClick={reset}>
-          重置
-        </button>
-      </header>
+        <h3>配置抽卡环境</h3>
+        <div className="toolbar">
+          <select
+            id="spreadSelect"
+            value={spreadKey}
+            onChange={(event) => {
+              setSpreadKey(event.target.value);
+              reset();
+              toast.success(`切换排阵为：${SPREADS[event.target.value].name}`);
+            }}
+          >
+            <option value="three">三张（过去 / 现在 / 未来）</option>
+            <option value="one">单张（指引）</option>
+            <option value="celtic">凯尔特十字（10 张）</option>
+          </select>
+          <button className="secondary-btn" onClick={undo} disabled={!canUndo}>
+            撤销一步
+          </button>
+          <button className="secondary-btn" onClick={reshuffle}>
+            洗牌
+          </button>
+          <span className="hint">{statusText}</span>
+        </div>
+      </section>
 
-      <main className="layout">
-        <section className="hero">
-          <div>
-            <p className="eyebrow">娱乐 / 交互</p>
-            <h1>点击牌背翻面并加入牌阵。</h1>
-            <p className="hero__desc">支持单张、三张与凯尔特十字。所有操作在本地完成。</p>
+      <section className="tool-card" id="table">
+        <div className="tool-card__head">
+          <div className="tool-card__tags">
+            <span className="badge">桌面</span>
           </div>
-          <div className="hero__panel">
-            <div className="panel__item">
-              <p className="panel__label">当前排阵</p>
-              <p className="panel__value">{spread.name}</p>
-            </div>
-            <div className="panel__item">
-              <p className="panel__label">已抽</p>
-              <p className="panel__value">{placed.length}</p>
-            </div>
-          </div>
-        </section>
+        </div>
+        <h3>牌阵展示区</h3>
+        <div className="table" id="tableArea">
+          {spread.slots.map((slot) => {
+            const current = placed.find((item) => item.slotId === slot.id);
+            const baseStyle: React.CSSProperties = {
+              left: `${slot.x}%`,
+              top: `${slot.y}%`,
+              transform: `translate(-50%, -50%)${slot.rotate ? ` rotate(${slot.rotate}deg)` : ""}`,
+            };
 
-        <section className="tool-card">
-          <div className="tool-card__head">
-            <div className="tool-card__tags">
-              <span className="badge">排阵</span>
-              <span className="badge badge--alt">抽卡</span>
-            </div>
-          </div>
-          <h3>控制面板</h3>
-          <div className="toolbar">
-            <label htmlFor="spreadSelect">选择排阵</label>
-            <select
-              id="spreadSelect"
-              value={spreadKey}
-              onChange={(event) => {
-                setSpreadKey(event.target.value);
-                reset();
-              }}
-            >
-              <option value="three">三张（过去 / 现在 / 未来）</option>
-              <option value="one">单张（指引）</option>
-              <option value="celtic">凯尔特十字（10 张）</option>
-            </select>
-            <button className="secondary-btn" onClick={undo} disabled={!canUndo}>
-              撤销
-            </button>
-            <button className="secondary-btn" onClick={reshuffle}>
-              洗牌
-            </button>
-            <span className="hint">{statusText}</span>
-          </div>
-        </section>
-
-        <section className="tool-card" id="table">
-          <div className="tool-card__head">
-            <div className="tool-card__tags">
-              <span className="badge">桌面</span>
-            </div>
-          </div>
-          <h3>牌阵区域</h3>
-          <div className="table" id="tableArea">
-            {spread.slots.map((slot) => {
-              const current = placed.find((item) => item.slotId === slot.id);
-              const baseStyle: React.CSSProperties = {
-                left: `${slot.x}%`,
-                top: `${slot.y}%`,
-                transform: `translate(-50%, -50%)${slot.rotate ? ` rotate(${slot.rotate}deg)` : ""}`,
-              };
-
-              if (!current) {
-                return (
-                  <div className="slot" key={slot.id} style={baseStyle}>
-                    <div className="slot__label">{slot.label}</div>
-                  </div>
-                );
-              }
-
+            if (!current) {
               return (
                 <div className="slot" key={slot.id} style={baseStyle}>
-                  <div className={`card is-flipped${slot.rotate ? "" : ""}`}>
-                    <div className="card__face card__back">
-                      <span>TAROT</span>
-                    </div>
-                    <div className="card__face card__front">
-                      <div className="card__title">{current.card.name}</div>
-                      <div className="card__desc">{current.card.desc}</div>
-                    </div>
-                  </div>
+                  <div className="slot__label">{slot.label}</div>
                 </div>
               );
-            })}
-          </div>
-        </section>
+            }
 
-        <section className="tool-card" id="deck">
-          <div className="tool-card__head">
-            <div className="tool-card__tags">
-              <span className="badge">牌库</span>
-            </div>
-          </div>
-          <h3>浮动牌背（点击抽卡）</h3>
-          <div className="deck" id="deckArea">
-            {remaining.length === 0 ? (
-              <div className="empty">牌库已抽完，可以撤销或重置。</div>
-            ) : (
-              remaining.slice(0, 12).map((card, index) => (
-                <div className="deck-card" key={`${card.name}-${index}`} onClick={() => draw(index)}>
-                  <div className="card">
-                    <div className="card__face card__back">
-                      <span>TAROT</span>
-                    </div>
-                    <div className="card__face card__front">
-                      <div className="card__title">{card.name}</div>
-                      <div className="card__desc">{card.desc}</div>
-                    </div>
+            return (
+              <div className="slot" key={slot.id} style={baseStyle}>
+                <div className={`card is-flipped`}>
+                  <div className="card__face card__back">
+                    <span>TAROT</span>
+                  </div>
+                  <div className="card__face card__front">
+                    <div className="card__title">{current.card.name}</div>
+                    <div className="card__desc">{current.card.desc}</div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-          <p className="hint">提示：每次点击会抽取一张随机牌并翻面落位。抽满后可撤销或重置。</p>
-        </section>
-      </main>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
-      <footer className="footer">
-        <p>ToolsHub · 本地抽卡 · 可扩展牌义与更多排阵</p>
-      </footer>
-    </div>
+      <section className="tool-card" id="deck">
+        <div className="tool-card__head">
+          <div className="tool-card__tags">
+            <span className="badge">牌库</span>
+          </div>
+        </div>
+        <h3>浮动牌背（点击从牌库抽卡）</h3>
+        <div className="deck" id="deckArea">
+          {remaining.length === 0 ? (
+            <div className="empty">牌库已抽空。您可以点击重置按钮开始新的一局。</div>
+          ) : (
+            remaining.slice(0, 12).map((card, index) => (
+              <div className="deck-card" key={`${card.name}-${index}`} onClick={() => draw(index)}>
+                <div className="card">
+                  <div className="card__face card__back">
+                    <span>TAROT</span>
+                  </div>
+                  <div className="card__face card__front">
+                    <div className="card__title">{card.name}</div>
+                    <div className="card__desc">{card.desc}</div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        <div className="hint" style={{ marginTop: '12px', opacity: 0.8 }}>
+          <strong>操作提示：</strong> 点击下方的牌背将卡片根据您选择的排阵顺序落位到桌面上。
+        </div>
+      </section>
+    </Layout>
   );
 }
