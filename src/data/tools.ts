@@ -10,11 +10,11 @@ export const TOOL_DATA: ToolItem[] = [
         mtime: 1768979359882,
     },
     {
-        id: "tarot",
-        title: "塔罗抽卡",
-        desc: "支持排阵的抽卡桌面：点击牌背翻面并落位。",
-        tags: ["娱乐", "效率"],
-        path: "/tools/tarot",
-        mtime: 1768979600000,
+        id: "deep-research-cleaner",
+        title: "Deep Research 清理器",
+        desc: "一键清理 OpenAI Deep Research 导出 Markdown 中的引用标记、实体标签与图片指令。",
+        tags: ["效率", "AI"],
+        path: "/tools/deep-research-cleaner",
+        mtime: 1740192797000,
     },
 ];
